@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ESP32 Counter Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { margin:0; padding:0; font-family:Arial; background:#f0f0f0; display:flex; flex-direction:column; height:100vh; }
+        #topbar { background:#1e88e5; color:white; padding:12px; text-align:center; font-size:28px; font-weight:bold; }
+        #count { flex:1; font-size:22vw; font-weight:bold; display:flex; justify-content:center; align-items:center; }
+        #datetime { text-align:center; font-size:6vw; padding-bottom:20px; color:#444; }
+        #controls { display:flex; justify-content:center; gap:20px; padding:20px; }
+        button { font-size:6vw; padding:15px 30px; border:none; border-radius:15px; background:#e53935; color:white; }
+        #hours-box { background:#fff; width:100%; max-height:200px; overflow-y:auto; padding:10px; border-top:2px solid #ccc; }
+        .hour-row { font-size:5vw; display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid #eee; }
+    </style>
+</head>
+<body>
+
+    <div id="topbar">Production Counter</div>
+    <div id="count">0</div>
+    <div id="datetime">Loading...</div>
+
+    <div id="controls">
+        <button onclick="resetCount()">RESET</button>
+    </div>
+
+    <div id="hours-box"><div id="hours"></div></div>
+
+    <script>
+        let count = 0;
+
+        function updateScreen() {
+            document.getElementById("count").innerText = count;
+            const now = new Date();
+            document.getElementById("datetime").innerText =
+                now.toLocaleDateString() + " — " + now.toLocaleTimeString();
+        }
+
+        function resetCount() {
+            count = 0;
+            updateScreen();
+        }
+
+        function loadHours() {
+            let html = "";
+            for (let i = 0; i < 24; i++) {
+                html += `<div class="hour-row"><span>${String(i).padStart(2,"0")}:00</span><span id="h${i}">0</span></div>`;
+            }
+            document.getElementById("hours").innerHTML = html;
+        }
+
+        loadHours();
+        updateScreen();
+
+        async function refreshFromESP32() {
+            try {
+                const res = await fetch("http://192.168.1.50/data"); 
+                const data = await res.json();
+                count = data.count;
+
+                if (data.hourTotals) {
+                    for (let hr = 0; hr < 24; hr++) {
+                        document.getElementById("h"+hr).innerText = data.hourTotals[hr];
+                    }
+                }
+                updateScreen();
+            } catch (e) { console.log("ESP32 not reachable"); }
+        }
+
+        setInterval(refreshFromESP32, 1000);
+    </script>
+
+</body>
+</html>
