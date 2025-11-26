@@ -54,7 +54,7 @@
 
         async function refreshFromESP32() {
             try {
-                const res = await fetch("http://192.168.1.50/data"); 
+                const res = await fetch("http://192.168.0.239/data"); 
                 const data = await res.json();
                 count = data.count;
 
